@@ -10,14 +10,15 @@ router.post('/add',authMiddleware, schemaMiddleware(createProjectSchema),async (
     try{
         const {title,description}= req.body;
         const email = req.user.email;
-        const user= await User.findOne({email});
-        const newProject = new Project({
+        const user= await User.findOne({
+            where:{email}
+        });
+        const newProject = await Project.create({
             title,
             description,
-            owner:user._id
+            ownerId:user.id
         })
-        const savedProject = await newProject.save();
-        return res.status(200).json({message:"added successfully",savedProject});
+        return res.status(200).json({message:"added successfully",newProject});
     }catch(err){
         return res.status(400).json({message:"error occured",err});
     } 
@@ -27,13 +28,17 @@ router.get('/read/:id',authMiddleware,async (req,res)=>{
     try{
         const id = req.params.id;
         const email = req.user.email;  
-        const user = await User.findOne({email});
-        const existingProj = await Project.findOne({_id:id});
-        if(!existingProj) return res.status(400).json({message:"project dont exists"});
+        const project = await Project.findOne({
+            where : {id},
+            include:{
+                model:User,
+                as: "owner",
+                where:{email}
+            } 
+        });
 
-        if(!existingProj.owner.equals(user._id)) return res.status(400).json({message:"invalid user"});
-        return res.status(200).json({message:"successfully read",existingProj});
-     
+        if(!project) return res.status(400).json({message:"invalid projectId"});
+        return res.status(200).json({message:"successfully read",project});
     }catch(err){
         return res.status(400).json({message:"error occured while reading",err});
     }
@@ -44,18 +49,23 @@ router.patch("/update/:id",authMiddleware,async (req,res)=>{
         const {title,description} = req.body;
         const id = req.params.id;
         const email = req.user.email;  
-        const user = await User.findOne({email});
-        const existingProj = await Project.findOne({_id:id});
-        if(!existingProj) return res.status(400).json({message:"project dont exists"});
+        const project = await Project.findOne({
+            where:{id},
+            include:{
+                model:User,
+                as: "owner",
+                where:{email}
+            }
+        })
+        if(!project) return res.status(400).json({message:"project dont exists"});
 
-        if(!existingProj.owner.equals(user._id)) return res.status(400).json({message:"invalid user"});
 
-        existingProj.title = title || existingProj.title;
-        existingProj.description =  description || existingProj.description;
-        const updatedProj = await existingProj.save();
-        return res.status(200).json({message:"successfully read",updatedProj}); 
+        project.title = title || project.title;
+        project.description =  description || project.description;
+        const updatedProj = await project.save();
+        return res.status(200).json({message:"successfully update",updatedProj}); 
     }catch(err){
-        return res.status(400).json({message:"error occured while reading",err});
+        return res.status(400).json({message:"error occured while updating",err});
     }    
 })
 
@@ -64,10 +74,15 @@ router.delete("/delete/:id",authMiddleware,async(req,res)=>{
         const id = req.params.id;
         const email = req.user.email;  
         const user = await User.findOne({email});
-        const existingProj = await Project.findOne({_id:id});
-        if(!existingProj) return res.status(400).json({message:"project dont exists"});
-        if(!existingProj.owner.equals(user._id)) return res.status(400).json({message:"invalid user"});
-        await existingProj.deleteOne();
+        const deletedProj = await Project.destroy({
+            where:{id},
+            include:{
+                model:User,
+                as:"owner",
+                where:{email}
+            }
+        })
+        if(!deletedProj) return res.status(400).json({message:"project dont exists"});
         return res.status(200).json({message:"project deleted successfully"});
     }catch(err){
         return res.status(400).json({message:"error occured"});
@@ -78,14 +93,23 @@ router.get("/list",authMiddleware,async (req,res)=>{
     try{
         const {page=1, limit=10} = req.query;
         const email = req.user.email;
-        const user = await User.findOne({email});
-        const allProjects = await user.populate("projects");
+        const user = await User.findOne({
+            where:{email},
+            include:{
+                model:Project,
+                as:"projects"
+            }
+        });
+        console.log("\n \n \n \n \n");
+        const allProjects = user.projects;
+        console.log(allProjects);
+              
 
         const pageNumber = parseInt(page);
         const pageSize = parseInt(limit);
         const skip = (pageNumber-1)*pageSize;
 
-        const paginatedProjects = allProjects.projects.slice(skip, skip+pageSize);
+        const paginatedProjects = allProjects.slice(skip, skip+pageSize);
         res.status(200).json({
             total: allProjects.length,
             page: pageNumber,

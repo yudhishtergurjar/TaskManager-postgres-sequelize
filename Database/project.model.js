@@ -1,31 +1,24 @@
-import mongoose from "mongoose";
+import {DataTypes} from "sequelize";
+import sequelize from "../postgres/sequelizeDB.js";
+import User from "./user.model.js";
 
-const projectSchema = new mongoose.Schema({
+const Project = sequelize.define("Project",{
+    id:{
+        type:DataTypes.INTEGER,
+        autoIncrement:true,
+        primaryKey:true
+    },
     title:{
-        type:String,
-        required:true,
-        minlength:3
+        type:DataTypes.STRING,
+        allowNull:false
     },
     description:{
-        type:String,
-        maxlength:500
-    },
-    owner:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true,
-        index:true
+        type:DataTypes.STRING,
+        allowNull:false
     }
-},{timestamps: true});
-
-
-projectSchema.virtual("tasks",{
-  ref: "Task",
-  localField: "_id",
-  foreignField: "project"
 });
+Project.belongsTo(User, {foreignKey:"ownerId", as:"owner"});
 
-
-const Project = mongoose.model("Project",projectSchema);
+User.hasMany(Project, {foreignKey:"ownerId", as: "projects"});
 
 export default Project;

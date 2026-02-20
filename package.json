@@ -11,6 +11,7 @@
   "description": "",
   "type": "module",
   "dependencies": {
+    "@sequelize/postgres": "^7.0.0-alpha.48",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.4",
@@ -18,6 +19,11 @@
     "install": "^0.13.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.2.1"
+    "mongoose": "^9.2.1",
+    "pg": "^8.18.0",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.5"
   }
 }

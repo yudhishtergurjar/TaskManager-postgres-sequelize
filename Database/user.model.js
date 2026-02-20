@@ -1,52 +1,28 @@
-import mongoose from "mongoose";
+import {DataTypes} from "sequelize";
+import sequelize from "../postgres/sequelizeDB.js";
 
-const userSchema = new mongoose.Schema({
+const User = sequelize.define("User",{
+    id:{
+        type : DataTypes.INTEGER,
+        autoIncrement:true,
+        primaryKey:true
+    },
     username:{
-        type: String,
-        required:true,
-        minlength:3
+        type:DataTypes.STRING,
+        allowNull:false
     },
     email:{
-        type:String,
-        required:true,
+        type:DataTypes.STRING,
         unique:true,
-        lowercase:true,
-        index:true
+        allowNull:false
     },
     hashedPassword:{
-        type:String,
-        required:true
+        type: DataTypes.STRING,
     },
     refreshToken:{
-        type:String,
-        default:null
+        type:DataTypes.TEXT
     }
-},{
-    timestamps:true,
-});
+},
+);
 
-
-
-userSchema.methods.logout = async function (){
-  this.refreshToken = null;
-  return await this.save();
-};
-userSchema.methods.setRefreshToken = async function (newRefreshToken){
-  this.refreshToken = newRefreshToken;
-  return await this.save();
-};
-
-
-
-
-userSchema.virtual("projects",{
-    ref:"Project",
-    localField:"_id",
-    foreignField:"owner"
-});
-userSchema.pre("save",async (next)=>{
-    console.log("pre save running");
-})
-
-const User = mongoose.model("User",userSchema);
 export default User;
