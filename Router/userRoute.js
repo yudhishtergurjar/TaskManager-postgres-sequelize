@@ -4,7 +4,8 @@ import "dotenv/config";
 import {generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken} from "../services/token.js";
 import { schemaMiddleware } from "../Middleware/schemaMiddleware.js"; 
 import { userRegisterSchema, userLoginSchema } from "../Schema/schema.js";
-import User from "../Database/user.model.js";
+import db from "../models/index.js";
+const { User, Project, Task } = db;
 
 
 
@@ -33,7 +34,7 @@ router.post('/register',schemaMiddleware(userRegisterSchema),async (req,res)=>{
             email,
             accessToken,
             refreshToken,
-            newUser
+            
         });
     }catch(err){
         console.log("error occured while registering",err);
