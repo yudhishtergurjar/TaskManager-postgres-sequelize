@@ -2,7 +2,7 @@ import express from "express";
 import "dotenv/config";
 import { schemaMiddleware, authMiddleware } from "../Middleware/schemaMiddleware.js"; 
 import { createTaskSchema, updateTaskSchema, updateStatusSchema } from "../Schema/schema.js";
-import db from "../models/index.js";
+import db from "../../Task-Manager/models/index.js";
 const { User, Project, Task } = db;
 
 const router = express.Router();

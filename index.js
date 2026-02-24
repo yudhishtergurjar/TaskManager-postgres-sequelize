@@ -6,14 +6,16 @@ import userRoute from "./Router/userRoute.js";
 import projectRoute from "./Router/ProjectRoute.js";
 import taskRoute from "./Router/taskRoute.js";
 import cookieParser from "cookie-parser";
-import connection from "./postgres/postgres.js";
+import connectPostgres from "./connections/postgres.js";
 import 'dotenv/config';
+import { connectRedis } from "./connections/redis.js";
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-connection();
+await connectPostgres();
+await connectRedis();
 
 app.use('/auth',userRoute);
 app.use('/projects',projectRoute);

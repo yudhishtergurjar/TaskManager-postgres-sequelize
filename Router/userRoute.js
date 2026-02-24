@@ -1,10 +1,10 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import "dotenv/config";
-import {generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken} from "../services/token.js";
+import {generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken} from "../../Task-Manager/services/token.js";
 import { schemaMiddleware } from "../Middleware/schemaMiddleware.js"; 
 import { userRegisterSchema, userLoginSchema } from "../Schema/schema.js";
-import db from "../models/index.js";
+import db from "../../Task-Manager/models/index.js";
 const { User, Project, Task } = db;
 
 

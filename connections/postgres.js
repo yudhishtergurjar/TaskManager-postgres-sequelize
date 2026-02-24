@@ -1,5 +1,5 @@
 import db from "../models/index.js";
-const connection = async ()=>{
+const connectPostgres = async ()=>{
     try{
         await db.sequelize.authenticate();
         console.log('Connection has been established successfully.');
@@ -7,4 +7,4 @@ const connection = async ()=>{
         console.error('Unable to connect to the database:', error);
     }
 }
-export default connection;
+export default connectPostgres;
