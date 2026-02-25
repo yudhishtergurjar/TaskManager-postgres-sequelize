@@ -14,6 +14,7 @@ export const connectRedis = async () => {
         console.log("Redis Connected");
     } catch (error) {
         console.error("Unable to connect to Redis:", error);
+        throw error;
     }
 };
 

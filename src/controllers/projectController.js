@@ -1,12 +1,6 @@
-import express from "express";
-import "dotenv/config";
-import { schemaMiddleware, authMiddleware } from "../Middleware/schemaMiddleware.js"; 
-import { createProjectSchema, userLoginSchema } from "../Schema/schema.js";
-import db from "../../Task-Manager/models/index.js";
+import db from "../../models/index.js";
 const { User, Project, Task } = db;
-const router = express.Router();
-
-router.post('/add',authMiddleware, schemaMiddleware(createProjectSchema),async (req,res)=>{
+const addProj = async (req,res)=>{
     try{
         const {title,description}= req.body;
         const email = req.user.email;
@@ -22,9 +16,9 @@ router.post('/add',authMiddleware, schemaMiddleware(createProjectSchema),async (
     }catch(err){
         return res.status(400).json({message:"error occured",err});
     } 
-})
+}
 
-router.get('/read/:id',authMiddleware,async (req,res)=>{
+const readProj = async (req,res)=>{
     try{
         const id = req.params.id;
         const email = req.user.email;  
@@ -42,9 +36,9 @@ router.get('/read/:id',authMiddleware,async (req,res)=>{
     }catch(err){
         return res.status(400).json({message:"error occured while reading",err});
     }
-})
+}
 
-router.patch("/update/:id",authMiddleware,async (req,res)=>{
+const updateProj = async (req,res)=>{
     try{
         const {title,description} = req.body;
         const id = req.params.id;
@@ -67,9 +61,9 @@ router.patch("/update/:id",authMiddleware,async (req,res)=>{
     }catch(err){
         return res.status(400).json({message:"error occured while updating",err});
     }    
-})
+}
 
-router.delete("/delete/:id",authMiddleware,async(req,res)=>{
+const deleteProj = async(req,res)=>{
     try{
         const id = req.params.id;
         const email = req.user.email;  
@@ -87,9 +81,9 @@ router.delete("/delete/:id",authMiddleware,async(req,res)=>{
     }catch(err){
         return res.status(400).json({message:"error occured"});
     }
-})
+}
 
-router.get("/list",authMiddleware,async (req,res)=>{
+const listProj = async (req,res)=>{
     try{
         const {page=1, limit=10} = req.query;
         const email = req.user.email;
@@ -120,6 +114,6 @@ router.get("/list",authMiddleware,async (req,res)=>{
         console.log(err);
         return res.status(400).json({message:"error occured while listing",err});
     }
-});
+}
 
-export default router;
+export {addProj,readProj,updateProj,deleteProj,listProj};

@@ -1,13 +1,8 @@
-import express from "express";
-import "dotenv/config";
-import { schemaMiddleware, authMiddleware } from "../Middleware/schemaMiddleware.js"; 
-import { createTaskSchema, updateTaskSchema, updateStatusSchema } from "../Schema/schema.js";
-import db from "../../Task-Manager/models/index.js";
+import db from "../../models/index.js";
 const { User, Project, Task } = db;
 
-const router = express.Router();
 
-router.post('/add/:id',authMiddleware, schemaMiddleware(createTaskSchema),async (req,res)=>{
+const addTask = async (req,res)=>{
     try{
         const {title, description}=req.body;
         const email = req.user.email;
@@ -31,9 +26,9 @@ router.post('/add/:id',authMiddleware, schemaMiddleware(createTaskSchema),async 
     catch(err){
         return res.status(400).json({message:"error occured while adding",err});
     }
-});
+};
 
-router.get('/read/:id',authMiddleware,async (req,res)=>{
+const readTask = async (req,res)=>{
      try{
         const id = req.params.id;
         const email = req.user.email;  
@@ -63,9 +58,9 @@ router.get('/read/:id',authMiddleware,async (req,res)=>{
         console.log(err);
         return res.status(400).json({message:"error occured while reading",err});
     }
-})
+}
 
-router.patch("/update/:id",authMiddleware,schemaMiddleware(updateTaskSchema),async (req,res)=>{
+const updateTask = async (req,res)=>{
     try{
         const {title,description} = req.body;
         const id = req.params.id;
@@ -102,9 +97,9 @@ router.patch("/update/:id",authMiddleware,schemaMiddleware(updateTaskSchema),asy
         return res.status(400).json({message:"error occured while updating",err});
     }    
     
-})
+}
 
-router.get("/markCompleted/:id",authMiddleware,async (req,res)=>{
+const markCompletedTask = async (req,res)=>{
     try{    
         const id = req.params.id;
         const email = req.user.email;  
@@ -137,9 +132,9 @@ router.get("/markCompleted/:id",authMiddleware,async (req,res)=>{
         console.log(err);
         return res.status(400).json({message:"error occured",err})
     }
-})
+}
 
-router.delete("/delete/:id",authMiddleware,async(req,res)=>{
+const deleteTask = async(req,res)=>{
     try{    
         const id = req.params.id;
         const email = req.user.email;  
@@ -167,6 +162,6 @@ router.delete("/delete/:id",authMiddleware,async(req,res)=>{
         console.log(err);
         return res.status(400).json({message:"error occured",err})
     }
-})
+}
 
-export default router;
+export {addTask,readTask,updateTask,markCompletedTask,deleteTask}

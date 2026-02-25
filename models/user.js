@@ -21,9 +21,6 @@ export default (sequelize, DataTypes) => {
     },
     hashedPassword: {
       type: DataTypes.STRING
-    },
-    refreshToken: {
-      type: DataTypes.TEXT
     }
   }, {
     sequelize,
