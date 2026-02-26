@@ -26,6 +26,10 @@ export default (sequelize, DataTypes) => {
       defaultValue: 'pending',
       allowNull: false
     },
+    ownerId:{
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     projectId: {
       type: DataTypes.INTEGER,
       allowNull: false,

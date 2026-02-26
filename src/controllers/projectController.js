@@ -1,16 +1,15 @@
 import db from "../../models/index.js";
+import client from "../config/redis.js";
+
 const { User, Project, Task } = db;
 const addProj = async (req,res)=>{
     try{
         const {title,description}= req.body;
-        const email = req.user.email;
-        const user= await User.findOne({
-            where:{email}
-        });
+        const id = req.user.userId;
         const newProject = await Project.create({
             title,
             description,
-            ownerId:user.id
+            ownerId:id
         })
         return res.status(200).json({message:"added successfully",newProject});
     }catch(err){
@@ -20,19 +19,17 @@ const addProj = async (req,res)=>{
 
 const readProj = async (req,res)=>{
     try{
-        const id = req.params.id;
-        const email = req.user.email;  
+        const projectId = req.params.id;
+        const userId = req.user.userId;  
         const project = await Project.findOne({
-            where : {id},
-            include:{
-                model:User,
-                as: "owner",
-                where:{email}
-            } 
+            where:{
+                id:projectId, 
+                ownerId:userId
+            },
         });
 
         if(!project) return res.status(400).json({message:"invalid projectId"});
-        return res.status(200).json({message:"successfully read",project});
+        return res.status(200).json(project);
     }catch(err){
         return res.status(400).json({message:"error occured while reading",err});
     }
@@ -41,22 +38,25 @@ const readProj = async (req,res)=>{
 const updateProj = async (req,res)=>{
     try{
         const {title,description} = req.body;
-        const id = req.params.id;
-        const email = req.user.email;  
+        const projectId = req.params.id;
+        const userId = req.user.userId;  
         const project = await Project.findOne({
-            where:{id},
-            include:{
-                model:User,
-                as: "owner",
-                where:{email}
-            }
-        })
-        if(!project) return res.status(400).json({message:"project dont exists"});
+            where:{
+                id:projectId, 
+                ownerId:userId
+            },
+        });
 
+        if(!project) return res.status(400).json({message:"project dont exists"});
 
         project.title = title || project.title;
         project.description =  description || project.description;
         const updatedProj = await project.save();
+        const key1 = `user:${userId}:role:project:id:${projectId}`;
+        const key2 = `user:${userId}:role:project`;
+        await client.del(key1);
+        await client.del(key2);
+
         return res.status(200).json({message:"successfully update",updatedProj}); 
     }catch(err){
         return res.status(400).json({message:"error occured while updating",err});
@@ -65,18 +65,19 @@ const updateProj = async (req,res)=>{
 
 const deleteProj = async(req,res)=>{
     try{
-        const id = req.params.id;
-        const email = req.user.email;  
-        const user = await User.findOne({email});
+       const projectId = req.params.id;
+        const userId = req.user.userId;  
         const deletedProj = await Project.destroy({
-            where:{id},
-            include:{
-                model:User,
-                as:"owner",
-                where:{email}
-            }
+            where:{
+                id:projectId,
+                ownerId:userId
+            },
         })
         if(!deletedProj) return res.status(400).json({message:"project dont exists"});
+        const key1 = `user:${userId}:role:project:id:${projectId}`;
+        const key2 = `user:${userId}:role:project`;
+        await client.del(key1);
+        await client.del(key2);
         return res.status(200).json({message:"project deleted successfully"});
     }catch(err){
         return res.status(400).json({message:"error occured"});
@@ -86,33 +87,30 @@ const deleteProj = async(req,res)=>{
 const listProj = async (req,res)=>{
     try{
         const {page=1, limit=10} = req.query;
-        const email = req.user.email;
-        const user = await User.findOne({
-            where:{email},
-            include:{
-                model:Project,
-                as:"projects"
-            }
-        });
-        console.log("\n \n \n \n \n");
-        const allProjects = user.projects;
-        console.log(allProjects);
-              
+        const userId = req.user.userId;
 
         const pageNumber = parseInt(page);
         const pageSize = parseInt(limit);
-        const skip = (pageNumber-1)*pageSize;
 
-        const paginatedProjects = allProjects.slice(skip, skip+pageSize);
-        res.status(200).json({
-            total: allProjects.length,
+        const {rows, count} = await Project.findAndCountAll({
+            where:{
+                ownerId:userId
+            },
+            limit: pageSize,
+            offset: (pageNumber-1)*pageSize
+        });
+
+        return res.status(200).json({
+            total: count,
             page: pageNumber,
-            data: paginatedProjects
+            data: rows
         });
 
     }catch(err){
         console.log(err);
-        return res.status(400).json({message:"error occured while listing",err});
+        return res.status(500).json({
+            message:"error occured while listing"
+        });
     }
 }
 

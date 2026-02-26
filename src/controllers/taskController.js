@@ -1,25 +1,26 @@
 import db from "../../models/index.js";
+import client from "../config/redis.js";
+
 const { User, Project, Task } = db;
 
 
 const addTask = async (req,res)=>{
     try{
         const {title, description}=req.body;
-        const email = req.user.email;
+        const userId = req.user.userId;
         const projectId = req.params.id;
         const project = await Project.findOne({
-            where:{id:projectId},
-            include:{
-                model:User,
-                as:"owner",
-                where:{email}
+            where:{
+                id:projectId,
+                ownerId:userId
             }
         });
         if(!project) return res.status(400).json({message:"project dont exists"});
         const newTask = await Task.create({
             title,
             description,
-            projectId
+            projectId,
+            ownerId:userId
         })
         return res.status(200).json({message:"task added successfully",newTask});
     }
@@ -30,30 +31,17 @@ const addTask = async (req,res)=>{
 
 const readTask = async (req,res)=>{
      try{
-        const id = req.params.id;
-        const email = req.user.email;  
+        const taskId = req.params.id;
+        const userId = req.user.userId;  
         const task = await Task.findOne({
-            where:{id},
-            include:{
-                model:Project,
-                as:"project",
-                include:{
-                    model:User,
-                    as:"owner",
-                    where:{email}
-                }
+            where:{
+                id:taskId,   
+                ownerId:userId
             }
         });
+        if(!task) return res.status(400).json({message:"task doesn't exists to this user"});      
 
-        if(!task) return res.status(400).json({message:"task dont exists"});
-
-        return res.status(200).json({
-            message:"successfully read",
-            title: task.title,
-            description: task.description,
-            status: task.status,
-            project: task.projectId
-        });
+        return res.status(200).json(task);
     }catch(err){
         console.log(err);
         return res.status(400).json({message:"error occured while reading",err});
@@ -63,18 +51,12 @@ const readTask = async (req,res)=>{
 const updateTask = async (req,res)=>{
     try{
         const {title,description} = req.body;
-        const id = req.params.id;
-        const email = req.user.email;  
+        const taskId = req.params.id;
+        const userId = req.user.userId;  
         const task = await Task.findOne({
-            where:{id},
-            include:{
-                model:Project,
-                as:"project",
-                include:{
-                    model:User,
-                    as:"owner",
-                    where:{email}
-                }
+            where:{
+                id:taskId,   
+                ownerId:userId
             }
         });
         
@@ -83,15 +65,9 @@ const updateTask = async (req,res)=>{
         task.title = title || task.title;
         task.description =  description || task.description;
         const updatedTask = await task.save();
-        
-        return res.status(200).json({
-            message:"successfully updated",
-            title: updatedTask.title,
-            description: updatedTask.description,
-            status: updatedTask.status,
-            projectId: updatedTask.projectId,
-            // updatedTask
-        });
+        const key=`user:${userId}:role:task:id:${taskId}`;
+        await client.del(key);       
+        return res.status(200).json(updatedTask);
     }catch(err){
         console.log(err);
         return res.status(400).json({message:"error occured while updating",err});
@@ -101,18 +77,12 @@ const updateTask = async (req,res)=>{
 
 const markCompletedTask = async (req,res)=>{
     try{    
-        const id = req.params.id;
-        const email = req.user.email;  
+        const taskId = req.params.id;
+        const userId = req.user.userId;  
         const task = await Task.findOne({
-            where:{id},
-            include:{
-                model:Project,
-                as:"project",
-                include:{
-                    model:User,
-                    as:"owner",
-                    where:{email}
-                }
+            where:{
+                id:taskId,   
+                ownerId:userId
             }
         });
         
@@ -121,13 +91,10 @@ const markCompletedTask = async (req,res)=>{
         const updatedTask = await task.update({
             status:"completed"
         })
-        return res.status(200).json({
-            message:"successfully marked",
-            title: updatedTask.title,
-            description: updatedTask.description,
-            status: updatedTask.status,
-            project: updatedTask.projectId
-        });
+        const key=`user:${userId}:role:task:id:${taskId}`;
+        await client.del(key);       
+        return res.status(200).json(updatedTask);
+
     }catch(err){
         console.log(err);
         return res.status(400).json({message:"error occured",err})
@@ -135,25 +102,22 @@ const markCompletedTask = async (req,res)=>{
 }
 
 const deleteTask = async(req,res)=>{
-    try{    
-        const id = req.params.id;
-        const email = req.user.email;  
+    try{
+        const taskId = req.params.id;
+        const userId = req.user.userId;  
         const task = await Task.findOne({
-            where:{id},
-            include:{
-                model:Project,
-                as:"project",
-                include:{
-                    model:User,
-                    as:"owner",
-                    where:{email}
-                }
+            where:{
+                id:taskId,   
+                ownerId:userId
             }
         });
+        
         if(!task) return res.status(400).json({message:"task dont exists"});
+
         const deletedTask = task;
         await task.destroy();
-        console.log(deletedTask);
+        const key=`user:${userId}:role:task:id:${taskId}`;
+        await client.del(key);       
         return res.status(200).json({
             message:"task deleted successfully",
             deletedTask
