@@ -1,11 +1,12 @@
 import db from "../../models/index.js";
 import client from "../config/redis.js";
+import { getIO } from "../socketHandler/initSocket.js"; 
 
 const { User, Project, Task } = db;
 
-
 const addTask = async (req,res)=>{
     try{
+        const io=getIO();
         const {title, description}=req.body;
         const userId = req.user.userId;
         const projectId = req.params.id;
@@ -22,6 +23,11 @@ const addTask = async (req,res)=>{
             projectId,
             ownerId:userId
         })
+        const roomName = `project:${projectId}`;
+        io.to(roomName).emit('task:added',{
+            message:"new task is added",
+            newTask
+        });
         return res.status(200).json({message:"task added successfully",newTask});
     }
     catch(err){
@@ -50,6 +56,7 @@ const readTask = async (req,res)=>{
 
 const updateTask = async (req,res)=>{
     try{
+        const io=getIO();
         const {title,description} = req.body;
         const taskId = req.params.id;
         const userId = req.user.userId;  
@@ -65,6 +72,13 @@ const updateTask = async (req,res)=>{
         task.title = title || task.title;
         task.description =  description || task.description;
         const updatedTask = await task.save();
+
+        const roomName = `project:${updatedTask.projectId}`;
+        io.to(roomName).emit('task:updated',{
+            message:"new task is updated",
+            updatedTask
+        });
+
         const key=`user:${userId}:role:task:id:${taskId}`;
         await client.del(key);       
         return res.status(200).json(updatedTask);
@@ -91,6 +105,12 @@ const markCompletedTask = async (req,res)=>{
         const updatedTask = await task.update({
             status:"completed"
         })
+        const roomName = `project:${updatedTask.projectId}`;
+        io.to(roomName).emit('task:updated',{
+            message:"new task is updated",
+            updatedTask
+        });
+
         const key=`user:${userId}:role:task:id:${taskId}`;
         await client.del(key);       
         return res.status(200).json(updatedTask);
@@ -116,6 +136,13 @@ const deleteTask = async(req,res)=>{
 
         const deletedTask = task;
         await task.destroy();
+
+        const roomName = `project:${task.projectId}`;
+        io.to(roomName).emit('task:deleted',{
+            message:"task is deleted",
+            deletedTask
+        });
+
         const key=`user:${userId}:role:task:id:${taskId}`;
         await client.del(key);       
         return res.status(200).json({

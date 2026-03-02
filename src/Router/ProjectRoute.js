@@ -4,7 +4,7 @@ import { schemaMiddleware } from "../Middleware/schemaMiddleware.js";
 import { authMiddleware } from "../Middleware/authMiddleware.js"; 
 
 import { createProjectSchema, userLoginSchema } from "../Schema/schema.js";
-import {addProj, readProj, updateProj,deleteProj,listProj} from "../controllers/projectController.js";
+import {addProj, readProj, updateProj,deleteProj,listProj, addMember} from "../controllers/projectController.js";
 import { cacheMiddleware } from "../Middleware/cacheMiddleware.js";
 const router = express.Router();
 
@@ -17,5 +17,6 @@ router.patch("/update/:id",authMiddleware,updateProj);
 router.delete("/delete/:id",authMiddleware,deleteProj)
 
 router.get("/list",authMiddleware,cacheMiddleware("project"),listProj);
+router.post("/addMember/:id",authMiddleware,addMember);
 
 export default router;
