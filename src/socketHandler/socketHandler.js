@@ -4,7 +4,7 @@ const { User, Project, Task, ProjectMember, Message } = db;
 import client from "../config/redis.js";
 
 async function isMember(userId,roomId){
-    const presenceKey = `user:${userId}:room:${roomId}:presence`;//also delete this when owner removes member from their project . do this in route
+    const presenceKey = `user:${userId}:room:${roomId}:presence`;//also delete this when owner removes member from their project . do this in rou   te
     const redisGet = await client.get(presenceKey);
     if(!redisGet){//redis me nahi mila
         const isMember = await ProjectMember.findOne({
@@ -234,6 +234,52 @@ export const socketHandler = (io)=>{
 
     });
 };
+
+
+//how session is managed in sockets...
+// ??dont know 
+
+
+
+// Short answer:
+// 👉 Anyone who can establish a WebSocket connection can send events to backend
+// 👉 Backend MUST validate every event (never trust client)
+// There is NO concept of "only frontend can send events".
+// 🧠 Reality of WebSockets
+// Backend does NOT know:
+
+// Whether request came from React frontend
+
+// Whether request came from mobile app
+
+// Whether request came from Postman
+
+// Whether request came from malicious script
+
+// Because WebSocket is just:
+
+// TCP Persistent Connection + Message Protocol
+
+// Not browser-specific.
+
+// 🚀 Example
+
+// Anyone can do this:
+
+// const socket = io("http://your-server");
+
+// socket.emit("message:send", {
+//    roomId: 1,
+//    message: "Hello"
+// });
+
+// From:
+
+// ✅ Browser console
+// ✅ Node script
+// ✅ Postman WebSocket client
+// ✅ Attack scripts
+
 
 
 
